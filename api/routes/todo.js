@@ -1,56 +1,61 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
+const dbpath = './db/todo.json';
 
+router.get('/', async (req, res, next) => {
 
-
-router.get('/', (req, res, next) => {
-    let allChores    
-    fs.readFile('./db/todo.json', 'utf-8', function (err, data) {
-        if (err) throw err
-        allChores = JSON.parse(data);
-        res.status(200).json({
-            todos: allChores.thingsToDo
-        });
-    });
-
-})
+	try {
+        // const data = await readFile(dbpath);
+        const data = fs.readFileSync(dbpath);
+		res.send(JSON.parse(data));
+	} catch (e) {
+		res.status(500).send({ error: e.message });
+	}
+});
 
 router.post('/', (req, res, next) => {
-    const newChore = {
-        name: req.body.name,
-        donde: req.body.donde || "Casa",
-        eta: req.body.eta || 99,
-        completed: false
-    }
-    if (!newChore.name) {
-        return(
-        res.status(400).json({
-            error: "parametros invalidos"
-        }));
+    if (!req.body.name) {
+		return res.status(400).json({
+			error: 'Please provide a name'
+		});
     }
 
+    const chore = {
+		id: 1,
+		name: req.body.name,
+		where: req.body.where || null,
+		eta: req.body.eta || 99,
+		completed: false
+    };
+
+    let chores = [chore];
     
-    try {
-        fs.readFile('./db/todo.json', 'utf-8', function (err, data) {
-            if (err) throw err
-            let allChores = JSON.parse(data);
-            allChores.thingsToDo.push(newChore);
-            fs.writeFile("./db/todo.json", JSON.stringify(allChores), 'utf-8', function (err) {
-            });
-        })
-        
-        res.status(201).json({
-            message: 'Order was created'
-        });
-    } catch (err) {
-        res.status(400).json({
-            error: err
-        });        
+    if (fs.existsSync(dbpath)) {
+        chores = JSON.parse(fs.readFileSync(dbpath,  'utf-8'));
     }
-        
 
-    
-})
+    if(chores.length >= 1) {
+        chore.id = chores.length + 1;
+    }
 
-module.exports = router;  
+    chores.push(chore);
+
+    fs.writeFileSync(dbpath, JSON.stringify(chores), 'utf-8');
+    return res.send(chore);
+});
+
+function readFile(filePath) {
+	return new Promise((resolve, reject) => {
+		fs.readFile(filePath, (err, data) => {
+			if (!!err) {
+				reject(err);
+				return;
+			}
+
+			resolve(data);
+		});
+	});
+}
+
+module.exports = router;
