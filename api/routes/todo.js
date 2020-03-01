@@ -63,15 +63,15 @@ router.delete('/:id',(req,res,next) =>{
     
     
 
-    const chores = JSON.parse(fs.readFileSync(dbpath,  'utf-8'));
-    let chore = null;
-    for (let i=0; i<chores.length; i++) {
-        if (chores[i].id == id){
-            chore = chores[i];
-            chores.splice(i,1);
-            break;
+    let chores = JSON.parse(fs.readFileSync(dbpath,  'utf-8'));
+    let chore = null
+    chores = chores.filter((c) => {
+        if (c.id === id) {
+            chore = c;
+            return false
         }
-    }
+        return true;
+    });
 
     if (chore == null) {
         res.status(404).send({'error':'The ID provided could not be found'});
@@ -79,11 +79,33 @@ router.delete('/:id',(req,res,next) =>{
     }
     fs.writeFileSync(dbpath, JSON.stringify(chores), 'utf-8');
     res.send(chore);
-    
+})
 
-    // chores.splice(,1); 
-    //         fs.writeFileSync(dbpath, JSON.stringify(chores), 'utf-8');
-    
+router.get('/:id', (req,res,next)=>{
+    if (isNaN(req.params.id)) {
+        res.status(400).send({'error':'ID must be a number'});
+        return;
+    }
+    if (!Number.isInteger(Number(req.params.id))) {
+        res.status(400).send({'error':'ID must be an integer'});
+        return;
+    }
+    const id = parseInt(req.params.id);
+
+    if (!fs.existsSync(dbpath)){
+        res.status(404).send({'error':'The file could not be found'});
+        return;
+    }
+
+    let chores = JSON.parse(fs.readFileSync(dbpath,  'utf-8'));
+    for (let chore of chores) {
+        if (id == chore.id){
+            res.send(chore);
+            return
+        }
+    }
+
+    res.status(400).send({'error':'ID not found'});
 })
 
 function readFile(filePath) {
