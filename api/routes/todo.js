@@ -42,8 +42,49 @@ router.post('/', (req, res, next) => {
     chores.push(chore);
 
     fs.writeFileSync(dbpath, JSON.stringify(chores), 'utf-8');
-    return res.send(chore);
+    res.send(chores);
 });
+
+router.delete('/:id',(req,res,next) =>{
+    if (isNaN(req.params.id)) {
+        res.status(400).send({'error':'ID must be a number'});
+        return;
+    }
+    if (!Number.isInteger(Number(req.params.id))) {
+        res.status(400).send({'error':'ID must be an integer'});
+        return;
+    }
+    const id = parseInt(req.params.id);
+
+    if (!fs.existsSync(dbpath)){
+        res.status(404).send({'error':'The file could not be found'});
+        return;
+    }
+    
+    
+
+    const chores = JSON.parse(fs.readFileSync(dbpath,  'utf-8'));
+    let chore = null;
+    for (let i=0; i<chores.length; i++) {
+        if (chores[i].id == id){
+            chore = chores[i];
+            chores.splice(i,1);
+            break;
+        }
+    }
+
+    if (chore == null) {
+        res.status(404).send({'error':'The ID provided could not be found'});
+        return
+    }
+    fs.writeFileSync(dbpath, JSON.stringify(chores), 'utf-8');
+    res.send(chore);
+    
+
+    // chores.splice(,1); 
+    //         fs.writeFileSync(dbpath, JSON.stringify(chores), 'utf-8');
+    
+})
 
 function readFile(filePath) {
 	return new Promise((resolve, reject) => {

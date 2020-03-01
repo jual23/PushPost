@@ -19,10 +19,8 @@ if (req.method === 'OPTIONS') {
 next();
 });
 
-const orderRoutes = require('./api/routes/order');
 const toDoRoutes = require('./api/routes/todo');
 
-app.use('/order', orderRoutes);
 app.use('/todo', toDoRoutes);
 
 app.use((req, res, next) => {
